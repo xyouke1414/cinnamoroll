@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>玉桂狗小屋</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    min-height:100vh;
+    padding-bottom:40px;
+    background:linear-gradient(160deg,#e3f2ff 0%,#f3e9ff 48%,#ffe9f4 100%);
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    color:#5f7099;
+    -webkit-font-smoothing:antialiased;
+    user-select:none;
+  }
+
+  /* ---------- 导航栏 ---------- */
+  .nav{
+    position:sticky;top:0;z-index:20;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:12px max(16px,calc((100vw - 880px)/2));
+    background:rgba(255,255,255,.72);
+    backdrop-filter:blur(12px);
+    border-bottom:1px solid rgba(160,190,230,.25);
+  }
+  .brand{font-weight:800;font-size:15px;letter-spacing:1px;white-space:nowrap}
+  .tabs{display:flex;gap:6px}
+  .tab{
+    border:none;background:transparent;
+    font-family:inherit;font-size:13.5px;font-weight:700;
+    color:#8b98ba;padding:7px 14px;border-radius:999px;
+    cursor:pointer;transition:.18s;
+  }
+  .tab:hover{background:rgba(255,255,255,.9);color:#5f7099}
+  .tab.active{background:#fff;color:#5f7099;box-shadow:0 4px 12px rgba(140,170,215,.22)}
+
+  /* ---------- 布局 ---------- */
+  .wrap{max-width:880px;margin:0 auto;padding:22px 16px}
+  .page{display:none;animation:fade .3s ease}
+  .page.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .card{
+    background:#fff;border-radius:24px;
+    box-shadow:0 14px 34px rgba(130,160,210,.18);
+    padding:22px;
+  }
+
+  /* ---------- 首页 ---------- */
+  .hero{text-align:center;padding:38px 24px}
+  .hero-emoji{font-size:44px;line-height:1;margin-bottom:10px}
+  .hero h1{font-size:24px;letter-spacing:1px;margin-bottom:12px}
+  .hero p{font-size:14px;line-height:1.9;color:#8b98ba;margin-bottom:22px}
+  .cta{
+    border:none;cursor:pointer;font-family:inherit;
+    font-size:14px;font-weight:800;color:#fff;
+    padding:13px 30px;border-radius:999px;
+    background:linear-gradient(135deg,#ffb36b,#ff8fb8);
+    box-shadow:0 8px 20px rgba(255,140,170,.36);
+    transition:.18s;
+  }
+  .cta:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(255,140,170,.45)}
+  .cta:active{transform:translateY(0)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:16px}
+  .mini{text-align:center;padding:22px 16px;border-radius:20px}
+  .mini-icon{font-size:30px;margin-bottom:8px}
+  .mini h3{font-size:14px;margin-bottom:6px}
+  .mini p{font-size:12px;color:#9aa8c6;line-height:1.6}
+
+  /* ---------- 游戏 ---------- */
+  #page-game .card{max-width:420px;margin:0 auto}
+  .title{
+    text-align:center;font-size:17px;font-weight:700;
+    color:#6b7fa8;letter-spacing:2px;margin-bottom:12px;
+  }
+  .title span{color:#ff9ec4}
+
+  .screen{
+    position:relative;height:250px;border-radius:20px;overflow:hidden;
+    background:linear-gradient(180deg,#d6ecff 0%,#eaf6ff 55%,#ffeef6 100%);
+    display:grid;place-items:center;
+  }
+  .cloud{position:absolute;background:#fff;border-radius:999px;opacity:.8;pointer-events:none}
+  .c1{width:76px;height:24px;top:26px;left:22px;box-shadow:26px -12px 0 -4px #fff}
+  .c2{width:54px;height:18px;top:64px;right:26px;box-shadow:-20px -8px 0 -3px #fff}
+  .c3{width:40px;height:14px;top:120px;left:40px;opacity:.6}
+  .ground{
+    position:absolute;left:0;right:0;bottom:0;height:58px;
+    background:linear-gradient(180deg,#ffe6f2,#ffd6ea);pointer-events:none;
+  }
+  .ground::after{
+    content:"";position:absolute;top:0;left:0;right:0;height:4px;
+    background:repeating-linear-gradient(90deg,#ffc7e0 0 8px,transparent 8px 16px);
+  }
+  canvas{
+    position:relative;z-index:3;
+    width:192px;height:192px;
+    image-rendering:pixelated;image-rendering:crisp-edges;
+    cursor:pointer;transform:translateY(-8px);
+    filter:drop-shadow(0 8px 10px rgba(120,150,200,.22));
+  }
+
+  .stats{margin-top:14px;display:grid;gap:9px}
+  .stat{display:flex;align-items:center;gap:9px;font-size:12.5px;color:#7d8db0;font-weight:600}
+  .stat .label{width:64px;flex:none}
+  .bar{
+    flex:1;height:13px;border-radius:7px;background:#eaf0fa;overflow:hidden;
+    box-shadow:inset 0 1px 2px rgba(140,170,210,.2);
+  }
+  .bar>i{display:block;height:100%;width:100%;border-radius:7px;transition:width .35s ease}
+  #hungerBar{background:linear-gradient(90deg,#ffd27a,#ffa64d)}
+  #moodBar{background:linear-gradient(90deg,#9fd9ff,#5aa9f5)}
+
+  .buttons{display:flex;gap:9px;margin-top:14px}
+  .buttons button{
+    flex:1;border:none;border-radius:15px;
+    padding:12px 4px 11px;
+    font-size:13px;font-weight:700;font-family:inherit;color:#fff;
+    cursor:pointer;transition:transform .1s,box-shadow .1s,filter .15s;
+    background:#8fc4f0;box-shadow:0 4px 0 #6ba6da;
+  }
+  .buttons button:nth-child(1){background:#ffb36b;box-shadow:0 4px 0 #e08f43}
+  .buttons button:nth-child(2){background:#8fd0f5;box-shadow:0 4px 0 #5fa8d6}
+  .buttons button:nth-child(3){background:#ffa5c8;box-shadow:0 4px 0 #e07ba2}
+  .buttons button:hover{filter:brightness(1.05)}
+  .buttons button:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.18)}
+
+  .msg{
+    margin-top:12px;text-align:center;font-size:12.5px;color:#95a3c2;
+    min-height:18px;transition:opacity .3s;
+  }
+  .tip{margin-top:6px;text-align:center;font-size:11px;color:#bcc7dd}
+
+  /* ---------- 关于 ---------- */
+  .about h1{font-size:20px;margin-bottom:14px}
+  .about p{font-size:13.5px;line-height:1.95;color:#8b98ba;margin-bottom:14px}
+  .about ul{padding-left:20px;font-size:13.5px;line-height:2;color:#8b98ba}
+  .about li::marker{color:#ffb4cd}
+  .about .muted{color:#bcc7dd;font-size:12.5px;margin-bottom:0}
+
+  footer{text-align:center;font-size:12px;color:#bcc7dd;margin-top:28px}
+</style>
+</head>
+<body>
+
+<!-- ================= 导航 ================= -->
+<nav class="nav">
+  <div class="brand">☁️ 玉桂狗小屋</div>
+  <div class="tabs">
+    <button class="tab active" data-page="home">首页</button>
+    <button class="tab" data-page="game">喂养</button>
+    <button class="tab" data-page="about">关于</button>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <!-- ================= 首页 ================= -->
+  <section class="page active" id="page-home">
+    <div class="card hero">
+      <div class="hero-emoji">🐾</div>
+      <h1>欢迎来到玉桂狗小屋</h1>
+      <p>一只软乎乎的 2D 像素玉桂狗住在这里。<br>喂它吃点心、陪它玩耍，它会一直记得你。</p>
+      <button class="cta" data-page="game">开始照顾它 →</button>
+    </div>
+
+    <div class="grid">
+      <div class="card mini">
+        <div class="mini-icon">🍰</div>
+        <h3>喂食</h3>
+        <p>投喂甜点，饱食度 +20</p>
+      </div>
+      <div class="card mini">
+        <div class="mini-icon">🎾</div>
+        <h3>玩耍</h3>
+        <p>心情 +18，消耗一点体力</p>
+      </div>
+      <div class="card mini">
+        <div class="mini-icon">✋</div>
+        <h3>摸摸</h3>
+        <p>点它一下，就会蹭蹭你</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 游戏 ================= -->
+  <section class="page" id="page-game">
+    <div class="card">
+      <div class="title">☁️ 玉桂狗小屋 <span>♡</span></div>
+
+      <div class="screen">
+        <div class="cloud c1"></div>
+        <div class="cloud c2"></div>
+        <div class="cloud c3"></div>
+        <div class="ground"></div>
+        <canvas id="pet" width="32" height="32"></canvas>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><span class="label">🍰 饱食度</span><div class="bar"><i id="hungerBar"></i></div></div>
+        <div class="stat"><span class="label">💙 心情</span><div class="bar"><i id="moodBar"></i></div></div>
+      </div>
+
+      <div class="buttons">
+        <button data-action="feed">🍰 喂食</button>
+        <button data-action="play">🎾 玩耍</button>
+        <button data-action="pet">✋ 摸摸</button>
+      </div>
+
+      <div class="msg" id="msg">玉桂狗正在等你陪它玩～</div>
+      <div class="tip">点击玉桂狗也可以摸摸它哦</div>
+    </div>
+  </section>
+
+  <!-- ================= 关于 ================= -->
+  <section class="page" id="page-about">
+    <div class="card about">
+      <h1>关于这个小屋</h1>
+      <p>这是一个用纯 HTML + CSS + JavaScript 手写的像素宠物小站。玉桂狗不是图片，而是运行时用 Canvas 逐像素画出来的。</p>
+      <ul>
+        <li>像素绘制：32×32 网格，椭圆形状生成身体轮廓</li>
+        <li>动画：眨眼、浮动、吃东西时抖动、玩耍时跳跃</li>
+        <li>状态系统：饱食度和心情会随时间自然衰减</li>
+        <li>零依赖：单个文件，打开就能玩</li>
+      </ul>
+      <p class="muted">想改颜色或者数值？所有参数都写在代码开头的常量里。</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>用 ☁️ 和 ♡ 做的小网站</footer>
+
+<script>
+(() => {
+  "use strict";
+
+  /* =========================================================
+     页面切换
+     ========================================================= */
+  document.querySelectorAll('[data-page]').forEach(el => {
+    el.addEventListener('click', () => {
+      const page = el.dataset.page;
+      document.querySelectorAll('.page').forEach(s =>
+        s.classList.toggle('active', s.id === 'page-' + page)
+      );
+      document.querySelectorAll('.tab').forEach(t =>
+        t.classList.toggle('active', t.dataset.page === page)
+      );
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  /* =========================================================
+     玉桂狗游戏
+     ========================================================= */
+  const S = 32;
+  const canvas = document.getElementById('pet');
+  const ctx = canvas.getContext('2d');
+
+  const COL = {
+    outline: '#5f7099',
+    body:    '#ffffff',
+    shade:   '#e4edfb',
+    eye:     '#3c4c6e',
+    blush:   '#ffb4cd',
+    mouth:   '#8b98ba',
+    heart:   '#ff9dc4'
+  };
+
+  /* -------- 生成玉桂狗像素形状 -------- */
+  function buildShape() {
+    const body = Array.from({ length: S }, () => new Array(S).fill(false));
+
+    const addEllipse = (cx, cy, rx, ry) => {
+      for (let y = 0; y < S; y++) {
+        for (let x = 0; x < S; x++) {
+          const dx = (x + 0.5 - cx) / rx;
+          const dy = (y + 0.5 - cy) / ry;
+          if (dx * dx + dy * dy <= 1) body[y][x] = true;
+        }
+      }
+    };
+
+    addEllipse(16, 14, 8, 7.5);   // 脑袋
+    addEllipse(7,  15, 4, 8);     // 左耳
+    addEllipse(25, 15, 4, 8);     // 右耳
+
+    // 向外扩张一圈作为描边
+    const outline = Array.from({ length: S }, () => new Array(S).fill(false));
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        if (body[y][x]) continue;
+        let adjacent = false;
+        for (let dy = -1; dy <= 1 && !adjacent; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const ny = y + dy, nx = x + dx;
+            if (ny >= 0 && ny < S && nx >= 0 && nx < S && body[ny][nx]) {
+              adjacent = true; break;
+            }
+          }
+        }
+        if (adjacent) outline[y][x] = true;
+      }
+    }
+    return { body, outline };
+  }
+
+  const SHAPE = buildShape();
+
+  const HEART = [
+    [0,1,0,1,0],
+    [1,1,1,1,1],
+    [0,1,1,1,0],
+    [0,0,1,0,0]
+  ];
+
+  /* -------- 状态 -------- */
+  const state = {
+    hunger: 85,
+    mood: 85,
+    blinking: false,
+    blinkTimer: 0,
+    nextBlink: 2.5,
+    eatTimer: 0,
+    playTimer: 0,
+    hearts: []
+  };
+
+  const msgEl     = document.getElementById('msg');
+  const hungerBar = document.getElementById('hungerBar');
+  const moodBar   = document.getElementById('moodBar');
+
+  let msgTimer = null;
+  function say(text) {
+    msgEl.style.opacity = '0';
+    clearTimeout(msgTimer);
+    msgTimer = setTimeout(() => {
+      msgEl.textContent = text;
+      msgEl.style.opacity = '1';
+    }, 160);
+  }
+
+  function addHeart(x, y) {
+    state.hearts.push({ x, y, life: 1 });
+  }
+
+  /* -------- 交互 -------- */
+  function doAction(action) {
+    if (action === 'feed') {
+      if (state.hunger >= 98) { say('玉桂狗已经吃得饱饱的啦～'); return; }
+      state.hunger = Math.min(100, state.hunger + 20);
+      state.mood   = Math.min(100, state.mood + 3);
+      state.eatTimer = 1.4;
+      for (let i = 0; i < 3; i++) {
+        setTimeout(() => addHeart(11 + Math.random() * 12, 6 + Math.random() * 5), i * 140);
+      }
+      say('嗯～好吃！玉桂狗开心地眯起眼睛');
+    }
+    else if (action === 'play') {
+      if (state.hunger < 15) { say('肚子咕咕叫了，先吃点东西吧…'); return; }
+      state.mood   = Math.min(100, state.mood + 18);
+      state.hunger = Math.max(0, state.hunger - 8);
+      state.playTimer = 1.0;
+      for (let i = 0; i < 4; i++) {
+        setTimeout(() => addHeart(8 + Math.random() * 16, 4 + Math.random() * 7), i * 110);
+      }
+      say('蹦蹦跳跳，玩得好开心！');
+    }
+    else if (action === 'pet') {
+      state.mood = Math.min(100, state.mood + 8);
+      addHeart(11 + Math.random() * 10, 6);
+      say('玉桂狗蹭了蹭你的手～');
+    }
+  }
+
+  document.querySelectorAll('[data-action]').forEach(btn => {
+    btn.addEventListener('click', () => doAction(btn.dataset.action));
+  });
+  canvas.addEventListener('click', () => doAction('pet'));
+
+  /* -------- 逻辑更新 -------- */
+  function update(dt) {
+    state.hunger = Math.max(0, state.hunger - dt * 0.45);
+
+    let moodDrop = dt * 0.30;
+    if (state.hunger < 25) moodDrop += dt * 0.9;   // 饿了心情掉更快
+    state.mood = Math.max(0, state.mood - moodDrop);
+
+    // 眨眼
+    if (state.blinkTimer > 0) {
+      state.blinkTimer -= dt;
+      if (state.blinkTimer <= 0) state.blinking = false;
+    } else {
+      state.nextBlink -= dt;
+      if (state.nextBlink <= 0) {
+        state.blinking = true;
+        state.blinkTimer = 0.14;
+        state.nextBlink = 2 + Math.random() * 4;
+      }
+    }
+
+    if (state.eatTimer  > 0) state.eatTimer  = Math.max(0, state.eatTimer  - dt);
+    if (state.playTimer > 0) state.playTimer = Math.max(0, state.playTimer - dt);
+
+    // 爱心飘动
+    for (let i = state.hearts.length - 1; i >= 0; i--) {
+      const h = state.hearts[i];
+      h.y -= dt * 9;
+      h.life -= dt * 0.85;
+      if (h.life <= 0) state.hearts.splice(i, 1);
+    }
+
+    hungerBar.style.width = state.hunger + '%';
+    moodBar.style.width   = state.mood + '%';
+  }
+
+  /* -------- 绘制 -------- */
+  function draw(t) {
+    ctx.clearRect(0, 0, S, S);
+    const { body, outline } = SHAPE;
+
+    let bob = Math.round(Math.sin(t * 2.0) * 1);
+    if (state.eatTimer  > 0) bob = Math.round(Math.sin(t * 24) * 1);
+    if (state.playTimer > 0) bob = -Math.round(Math.abs(Math.sin(t * 9)) * 3);
+
+    ctx.save();
+    ctx.translate(0, bob);
+
+    // 描边
+    ctx.fillStyle = COL.outline;
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        if (outline[y][x]) ctx.fillRect(x, y, 1, 1);
+      }
+    }
+
+    // 身体
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        if (!body[y][x]) continue;
+        const hasBelow = y + 1 < S && body[y + 1][x];
+        ctx.fillStyle = hasBelow ? COL.body : COL.shade;
+        ctx.fillRect(x, y, 1, 1);
+      }
+    }
+
+    // 眼睛
+    ctx.fillStyle = COL.eye;
+    if (state.blinking) {
+      ctx.fillRect(11, 13, 2, 1);
+      ctx.fillRect(19, 13, 2, 1);
+    } else {
+      ctx.fillRect(11, 12, 2, 2);
+      ctx.fillRect(19, 12, 2, 2);
+    }
+
+    // 腮红
+    ctx.fillStyle = COL.blush;
+    ctx.fillRect(9, 15, 2, 2);
+    ctx.fillRect(21, 15, 2, 2);
+
+    // 嘴巴
+    ctx.fillStyle = COL.mouth;
+    ctx.fillRect(14, 16, 1, 1);
+    ctx.fillRect(17, 16, 1, 1);
+    ctx.fillRect(15, 17, 1, 1);
+    ctx.fillRect(16, 17, 1, 1);
+
+    ctx.restore();
+
+    // 爱心
+    for (const h of state.hearts) {
+      const hx = Math.round(h.x);
+      const hy = Math.round(h.y);
+      ctx.globalAlpha = Math.min(1, h.life * 1.6);
+      ctx.fillStyle = COL.heart;
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 5; c++) {
+          if (HEART[r][c]) ctx.fillRect(hx + c, hy + r, 1, 1);
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  /* -------- 主循环 -------- */
+  let lastT = 0;
+  function loop(now) {
+    const t  = now / 1000;
+    const dt = Math.min(0.05, lastT ? t - lastT : 0.016);
+    lastT = t;
+
+    update(dt);
+    draw(t);
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // 初始化状态条
+  hungerBar.style.width = state.hunger + '%';
+  moodBar.style.width   = state.mood + '%';
+})();
+</script>
+</body>
+</html>
